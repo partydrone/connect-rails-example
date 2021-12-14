@@ -1,0 +1,71 @@
+version: '3.8'
+
+x-app: &app
+  build:
+    args:
+      RUBY_VERSION: 3.1-rc
+    context: .
+  depends_on:
+    - db
+    - redis
+    - op-connect-api
+    - op-connect-sync
+  environment:
+    OP_CONNECT_ACCESS_TOKEN: eyJhbGciOiJFUzI1NiIsImtpZCI6InRmNnRjM3ljNmxicDVjeGJ4d3B1NXdlZ3VlIiwidHlwIjoiSldUIn0.eyIxcGFzc3dvcmQuY29tL2F1dWlkIjoiSlhaR1lMSEQyWkhXVENITkVLWllXUVFUQUEiLCIxcGFzc3dvcmQuY29tL3Rva2VuIjoiQlBGTU5vQWFKaTl2azBzLTV3Wl9MYTVXY05qZEE4SVoiLCIxcGFzc3dvcmQuY29tL2Z0cyI6WyJ2YXVsdGFjY2VzcyJdLCIxcGFzc3dvcmQuY29tL3Z0cyI6W3sidSI6ImFseW5iaXp6eXBneDYybnRpNnp4YWpsb2VpIiwiYSI6NDh9XSwiYXVkIjpbImNvbS4xcGFzc3dvcmQuY29ubmVjdCJdLCJzdWIiOiIyTDQ3RDRYN0FaQlhaSU5QSUxWWVhBS0M2SSIsImlhdCI6MTYzNjgyOTAxNCwiaXNzIjoiY29tLjFwYXNzd29yZC5iNSIsImp0aSI6ImFmdnVwdGZwbmRxZjJ0enhub3plNGFqaGg0In0.ID1ogpM-F8OMLXWKtDpwIzZg3fvNw1Fr8p9czjmxpG9BftAMZgoo7jZwIHK_uBAu5yl8iJpToRZ9Z0lXf-7yLw
+    OP_CONNECT_API_ENDPOINT: http://op-connect-api:8080/v1
+    OP_CONNECT_USER_AGENT: Sample Rails app
+  stdin_open: true
+  tty: true
+  volumes:
+    - .:/app:cached
+    - bundle:/usr/local/bundle
+
+services:
+  db:
+    environment:
+      POSTGRES_PASSWORD: postgres
+    image: postgres:14-alpine
+    ports:
+      - '5432:5432'
+    restart: always
+    volumes:
+      - postgres:/var/lib/postgresql/data
+
+  redis:
+    image: redis:alpine
+    ports:
+      - '6379:6379'
+    restart: always
+
+  op-connect-api:
+    image: 1password/connect-api:latest
+    # ports:
+    #   - '8080:8080'
+    volumes:
+      - ./1password-credentials.json:/home/opuser/.op/1password-credentials.json
+      - op-connect-data:/home/opuser/.op/data
+
+  op-connect-sync:
+    image: 1password/connect-sync:latest
+    ports:
+      - '8081:8080'
+    volumes:
+      - ./1password-credentials.json:/home/opuser/.op/1password-credentials.json
+      - op-connect-data:/home/opuser/.op/data
+
+  web:
+    <<: *app
+    command: rails s -b 0.0.0.0
+    ports:
+      - '3000:3000'
+
+  cable:
+    <<: *app
+    command: puma -p 28080 cable/config.ru
+    ports:
+      - '28080:28080'
+
+volumes:
+  bundle:
+  op-connect-data:
+  postgres:
