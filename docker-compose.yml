@@ -1,9 +1,10 @@
 version: '3.8'
 
-x-app: &app
+x-app:
+  &app
   build:
     args:
-      RUBY_VERSION: 3.1-rc
+      RUBY_VERSION: 3.1.1
     context: .
   depends_on:
     - db
@@ -19,6 +20,8 @@ x-app: &app
   volumes:
     - .:/app:cached
     - bundle:/usr/local/bundle
+    - type: tmpfs
+      target: /app/tmp/pids/
 
 services:
   db:
@@ -66,6 +69,6 @@ services:
       - '28080:28080'
 
 volumes:
-  bundle:
-  op-connect-data:
-  postgres:
+  bundle: null
+  op-connect-data: null
+  postgres: null

@@ -3,6 +3,7 @@ FROM ruby:${RUBY_VERSION}-alpine
 
 RUN apk add --no-cache --update build-base \
   bash \
+  gcompat \
   git \
   postgresql-dev \
   imagemagick \
@@ -15,4 +16,4 @@ WORKDIR /app
 COPY Gemfile* ./
 
 RUN gem update --system
-RUN bundle install -j $(nproc)
+RUN bundle check || bundle install -j $(nproc)
